@@ -1,2 +1,1 @@
-# SpeakEasy
-Ts++ parameters on the go
+How to use? 
