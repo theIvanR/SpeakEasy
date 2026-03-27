@@ -20,8 +20,8 @@ p = struct( ...
 % Auxilliary Parameters
 opts = struct( ...
     'cfg',            'single', ... % 'single' | 'series' | 'parallel' | 'series_parallel' , (series = "ideal isobaric")
-    'Vb',             0.2,      ... % sealed-box volume [m^3]
-    'alpha',          0,     ... % sealed-box damping factor
+    'Vb',             0.02,      ... % sealed-box volume [m^3]
+    'alpha',          1,     ... % sealed-box damping factor
     'radiationModel', 'bem',    ... % 'constant' | 'bessel' | 'bem'
     'r_ref',          1.0,      ... % reference distance for pressure proxy [m]
     'plot',           'reduced' );    % 'none' | 'reduced' | 'full'
