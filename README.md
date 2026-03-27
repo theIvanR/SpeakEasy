@@ -69,7 +69,7 @@ Step 1: Measure the impedance with bode_plotter.py
 
 1. Connect the measurement circuit:
 ```yaml
-Soundcard line out --> series resistor (e.g., 10 Ω) --> driver --> soundcard line in (channel 2)
+Soundcard line out --> series resistor (e.g., 22 Ω) --> driver --> soundcard line in (channel 2)
                  |
                  --> soundcard line in (channel 1)
 ```
