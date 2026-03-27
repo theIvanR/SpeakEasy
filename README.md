@@ -1,8 +1,6 @@
-TS++: Thiele–Small Plus Plus
+# SpeakEasy: A modular, open‑source loudspeaker simulation and parameter extraction toolkit.
 
-A modular, open‑source loudspeaker simulation and parameter extraction toolkit.
-
-TS++ provides a complete environment for:
+##What can SpeakEasy do?
 - Forward simulation: given T/S parameters (plus extended parameters like voice‑coil inductance and frequency‑dependent radiation), predict SPL, impedance, displacement, and efficiency.
 - Inverse parameter extraction: from a simple electrical impedance measurement (soundcard + series resistor), recover all T/S parameters in one shot.
 
@@ -10,7 +8,7 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 
 ---
 
-Prerequisites:
+##Prerequisites:
 
 - MATLAB (R2018b or newer recommended)
 - Python 3.8+ with the following packages:
@@ -27,7 +25,7 @@ pip install numpy scipy matplotlib sounddevice
 
 ---
 
-Getting Started:
+##Getting Started:
 
 1. Clone the repository
    git clone https://github.com/theIvanR/speakeasy.git
@@ -43,7 +41,7 @@ Getting Started:
 
 ---
 
-Forward Problem:
+##Forward Problem:
 
 Goal: Predict SPL, impedance, and other performance metrics from a set of T/S (plus) parameters.
 
@@ -67,7 +65,7 @@ All results are also saved to the results/ folder.
 
 ---
 
-Inverse Problem:
+##Inverse Problem:
 
 Goal: Determine T/S parameters from a real driver using only an electrical impedance measurement.
 
@@ -96,7 +94,7 @@ Step 2: Fit parameters with inverse_speaker_to_ts.m
 
 ---
 
-Contributing:
+##Contributing:
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
