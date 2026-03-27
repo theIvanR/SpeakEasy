@@ -68,11 +68,13 @@ Goal: Determine T/S parameters from a real driver using only an electrical imped
 Step 1: Measure the impedance with bode_plotter.py
 
 1. Connect the measurement circuit:
+```yaml
 Soundcard line out --> series resistor (e.g., 10 Ω) --> driver --> soundcard line in (channel 2)
                  |
                  --> soundcard line in (channel 1)
+```
 
-2. Run the measurement script:
+3. Run the measurement script:
    python bode_plotter.py
 
 Step 2: Fit parameters with inverse_speaker_to_ts.m
