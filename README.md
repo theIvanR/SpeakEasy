@@ -8,7 +8,7 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 
 ---
 
-##Prerequisites:
+## Prerequisites:
 
 - MATLAB (R2018b or newer recommended)
 - Python 3.8+ with the following packages:
@@ -25,7 +25,7 @@ pip install numpy scipy matplotlib sounddevice
 
 ---
 
-##Getting Started:
+## Getting Started:
 
 1. Clone the repository
    git clone https://github.com/theIvanR/speakeasy.git
@@ -41,7 +41,7 @@ pip install numpy scipy matplotlib sounddevice
 
 ---
 
-##Forward Problem:
+## Forward Problem:
 
 Goal: Predict SPL, impedance, and other performance metrics from a set of T/S (plus) parameters.
 
@@ -65,7 +65,7 @@ All results are also saved to the results/ folder.
 
 ---
 
-##Inverse Problem:
+## Inverse Problem:
 
 Goal: Determine T/S parameters from a real driver using only an electrical impedance measurement.
 
@@ -94,7 +94,7 @@ Step 2: Fit parameters with inverse_speaker_to_ts.m
 
 ---
 
-##Contributing:
+## Contributing:
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
