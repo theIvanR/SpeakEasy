@@ -1,6 +1,6 @@
 # SpeakEasy: A modular, open‑source loudspeaker simulation and parameter extraction toolkit.
 
-##What can SpeakEasy do?
+## What can SpeakEasy do?
 - Forward simulation: given T/S parameters (plus extended parameters like voice‑coil inductance and frequency‑dependent radiation), predict SPL, impedance, displacement, and efficiency.
 - Inverse parameter extraction: from a simple electrical impedance measurement (soundcard + series resistor), recover all T/S parameters in one shot.
 
