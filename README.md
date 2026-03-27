@@ -6,7 +6,6 @@
 
 All code is released under the AGPLv3 license – you can use, modify, and share it freely, but any derivative work or service must also be open source.
 
----
 
 ## Prerequisites:
 
@@ -23,7 +22,6 @@ pip install numpy scipy matplotlib sounddevice
 - Soundcard with at least one line output and one line input (a standard USB audio interface works perfectly).
 ⚠️ Do not use a microphone‑only input, two input channels are needed. 
 
----
 
 ## Getting Started:
 
@@ -39,7 +37,6 @@ pip install numpy scipy matplotlib sounddevice
    In MATLAB, navigate to the repository folder and add the subfolders to the path:
    addpath(genpath(pwd));
 
----
 
 ## Forward Problem:
 
@@ -63,7 +60,6 @@ Goal: Predict SPL, impedance, and other performance metrics from a set of T/S (p
 
 All results are also saved to the results/ folder.
 
----
 
 ## Inverse Problem:
 
@@ -92,12 +88,10 @@ Step 2: Fit parameters with inverse_speaker_to_ts.m
 
 5. Results are displayed and saved as a JSON file for later use in the forward problem.
 
----
 
 ## Contributing:
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
----
 
 Enjoy!
