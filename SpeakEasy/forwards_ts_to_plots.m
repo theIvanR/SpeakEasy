@@ -1,0 +1,30 @@
+% Forwards Problem Implementation
+clear; close all; clc;
+addpath("functions\");
+
+% Frequency grid
+f = logspace(1, 4, 2000);
+
+% Speaker parameters
+p = struct( ...
+    'Re',   6,        ... % Ohm, voice coil DC resistance
+    'Le',   0.29e-3,  ... % H, voice coil inductance
+    'Bl',   10,       ... % T*m, force factor (B*l product)
+    'Rms',  2.0,      ... % N*s/m, mechanical resistance of suspension
+    'Mms',  10.4e-3,  ... % kg, moving mass of diaphragm + coil
+    'Cms',  77e-6,    ... % m/N, mechanical compliance of suspension
+    'Sd',   132e-4,   ... % m^2, effective diaphragm area
+    'rho',  1.2,      ... % kg/m^3, air density
+    'c',    343       ... % m/s, speed of sound in air
+);
+
+% Auxilliary Parameters
+opts = struct( ...
+    'cfg',            'single', ... % 'single' | 'series' | 'parallel' | 'series_parallel' , (series = "ideal isobaric")
+    'Vb',             0.02,      ... % sealed-box volume [m^3]
+    'alpha',          1,     ... % sealed-box damping factor
+    'radiationModel', 'bem',    ... % 'constant' | 'bessel' | 'bem'
+    'r_ref',          1.0,      ... % reference distance for pressure proxy [m]
+    'plot',           'reduced' );    % 'none' | 'reduced' | 'full'
+
+results = simulate_speaker_full(f, p, opts);
