@@ -10,7 +10,7 @@ cfg.stride       = 1; % Reduction ratio
 cfg.fMin         = 30; % Hz
 cfg.fMax         = 300; % Hz
 
-% Initial parameter guess. 
+% Initial parameter guess of transducer
 p = struct( ...
     'Re',   6,        ... % Ohm, voice coil DC resistance (fitted)
     'Le',   0.29e-3,  ... % H, voice coil inductance (fitted)
@@ -22,6 +22,17 @@ p = struct( ...
     'rho',  1.2,      ... % kg/m^3, air density (fixed)
     'c',    343       ... % m/s, speed of sound in air (fixed)
 ); %note: R,L_wire is also contained here (and in csv!) ~1.7 Ohm and 50uH 
+
+% --- Configuration Options (opts struct) ---
+%   opts.cfg : 'single'          - Single driver (default)
+%              'series'          - Two drivers in series (isobaric)
+%              'parallel'        - Two drivers in parallel
+%              'series_parallel' - Hybrid series/parallel
+%
+%   opts.box : true/false        - Include sealed enclosure (default false)
+%              Requires:
+%                opts.Vb    : Box volume [m^3]
+%                opts.alpha : Box damping factor (dimensionless)
 
 opts = struct('cfg','single','box',false);
 
