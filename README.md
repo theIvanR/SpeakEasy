@@ -30,8 +30,7 @@ pip install numpy scipy matplotlib sounddevice
    cd speakeasy
 
 2. Read the white paper
-   The detailed theory and derivation are documented in whitepaper.pdf.
-   It is strongly recommended to understand the basics before using the tools.
+   It is strongly recommended to understand the basics before using the tools. Read both the guide and the derivation (preprint) papers. 
 
 3. Set up MATLAB path
    In MATLAB, navigate to the repository folder and add the subfolders to the path:
