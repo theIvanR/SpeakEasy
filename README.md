@@ -65,6 +65,8 @@ All results are also saved to the results/ folder.
 
 ## Inverse Problem:
 
+![description](image.png)
+
 Goal: Determine T/S parameters from a real driver using only an electrical impedance measurement.
 
 Step 1: Measure the impedance with make_bode_plots.py
