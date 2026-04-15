@@ -67,7 +67,7 @@ All results are also saved to the results/ folder.
 
 Goal: Determine T/S parameters from a real driver using only an electrical impedance measurement.
 
-Step 1: Measure the impedance with bode_plotter.py
+Step 1: Measure the impedance with make_bode_plots.py
 
 1. Connect the measurement circuit:
 ```yaml
