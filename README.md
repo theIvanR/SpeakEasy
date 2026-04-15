@@ -65,7 +65,7 @@ All results are also saved to the results/ folder.
 
 ## Inverse Problem:
 
-![description](image.png)
+![description](setup.png)
 
 Goal: Determine T/S parameters from a real driver using only an electrical impedance measurement.
 
