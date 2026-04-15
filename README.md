@@ -16,14 +16,18 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 
 ## Getting Started:
 
+0. Read the docs
+   It is strongly recommended to understand the basics before using the tools. Read both the guide and the derivation (preprint) papers. 
+
 1. Clone the repository
    git clone https://github.com/theIvanR/speakeasy.git
    cd speakeasy
 
-2. Read the white paper
-   It is strongly recommended to understand the basics before using the tools. Read both the guide and the derivation (preprint) papers. 
+2. Install Dependencies
+   MATLAB (R2018b or newer recommended)
+   Python 3.8 
 
-3. Set up MATLAB path
+4. Set up MATLAB path
    In MATLAB, navigate to the repository folder and add the subfolders to the path:
    addpath(genpath(pwd));
 
