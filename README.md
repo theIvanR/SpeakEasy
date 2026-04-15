@@ -18,7 +18,8 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 
 0. Read the docs
    ```
-   It is strongly recommended to understand the basics before using the tools. Read both the guide and the derivation (preprint) papers. 
+   It is strongly recommended to understand the basics before using the tools.
+   Read both the guide and the derivation (preprint) papers. 
    ```
    
 2. Clone the repository
