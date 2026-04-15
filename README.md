@@ -10,18 +10,9 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 ## Prerequisites:
 
 - MATLAB (R2018b or newer recommended)
-- Python 3.8+ with the following packages:
-  - numpy
-  - scipy
-  - matplotlib
-  - sounddevice
-
-Install them via pip:
-pip install numpy scipy matplotlib sounddevice
-
+- Python 3.8
 - Soundcard with at least one line output and one line input (a standard USB audio interface works perfectly).
 ⚠️ Do not use a microphone‑only input, two input channels are needed. 
-
 
 ## Getting Started:
 
