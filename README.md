@@ -10,7 +10,7 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 ## Prerequisites:
 
 - MATLAB (R2018b or newer recommended)
-- Python 3.8
+- Python (newest)
 - Soundcard with at least one line output and one line input (a standard USB audio interface works perfectly).
 ⚠️ Do not use a microphone‑only input, two input channels are needed. 
 
@@ -31,7 +31,7 @@ All code is released under the AGPLv3 license – you can use, modify, and share
 4. Install Dependencies
    ```
    MATLAB (R2018b or newer recommended)
-   Python 3.8 
+   Python (newest)
    ```
    
 6. Set up MATLAB path
