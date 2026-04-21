@@ -15,7 +15,7 @@ p = struct( ...
     'Bl',   10,       ... % N/A
     'Rms',  2.0,      ... % N*s/m
     'Mms',  10.4e-3,  ... % kg
-    'Cms',  77e-6    ... % m/N
+    'Cms',  77e-6     ... % m/N
 );
 
 % Auxilliary Parameters
