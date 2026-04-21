@@ -7,15 +7,16 @@ f = logspace(1, 4, 2000);
 
 % Speaker parameters
 p = struct( ...
+    'c',    343,      ... % m/s
+    'rho',  1.2,      ... % kg/m^3
+    'Sd',   132e-4,   ... % m^2
     'Re',   6,        ... % Ohm
     'Le',   0.29e-3,  ... % H
     'Bl',   10,       ... % N/A
     'Rms',  2.0,      ... % N*s/m
     'Mms',  10.4e-3,  ... % kg
-    'Cms',  77e-6,    ... % m/N
-    'Sd',   132e-4,   ... % m^2
-    'rho',  1.2,      ... % kg/m^3
-    'c',    343 );    % m/s
+    'Cms',  77e-6    ... % m/N
+);
 
 % Auxilliary Parameters
 opts = struct( ...
