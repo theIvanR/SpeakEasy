@@ -245,10 +245,10 @@ if __name__ == "__main__":
         input_device=INPUT_DEVICE,
         output_device=OUTPUT_DEVICE,
         fs=48000,
-        duration_s=90.0,
-        output_rms=0.66,
+        duration_s=30.0,
+        output_rms=0.2,
         r_sense=22.060,
-        nperseg=16384,
+        nperseg=32768,
         f_min=20.0,
         f_max=20000.0,
     )
