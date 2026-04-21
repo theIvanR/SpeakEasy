@@ -37,7 +37,9 @@ opts = struct('cfg','single','box',false);
     
     disp(result.p);
     disp(result.features);
-
+    Vas = result.p.rho * result.p.c^2 * result.p.Sd^2 * result.p.Cms;
+    disp(Vas);
+    
 % Plot Results    
     plot_fit_result(result);
     grid on;
