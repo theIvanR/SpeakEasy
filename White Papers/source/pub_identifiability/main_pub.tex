@@ -1,0 +1,124 @@
+\begin{document}
+
+\section*{Structural Identifiability of a Loudspeaker's TS Parameters from Electrical Impedance}
+
+\subsection*{Definition of Structural Identifiability}
+Consider a parametric model with parameter vector $\theta \in \Theta \subseteq \mathbb{R}^p$ that generates an observable output $y(\cdot;\theta)$. The model is said to be \textbf{structurally globally identifiable} if the mapping $\theta \mapsto y(\cdot;\theta)$ is injective, i.e., for almost all $\theta \in \Theta$,
+\[
+y(\cdot;\theta_1) = y(\cdot;\theta_2) \implies \theta_1 = \theta_2.
+\]
+In other words, perfect, noise‑free observations uniquely determine the unknown parameter values.
+
+\subsection*{Loudspeaker Impedance Model}
+The electrical impedance of a moving‑coil loudspeaker, according to the Thiele--Small (TS) model, is given by
+\[
+Z_e(s) = R_e + s L_e + \frac{(Bl)^2}{Z_m^{\mathrm{tot}}(s)},
+\]
+where the total mechanical impedance $Z_m^{\mathrm{tot}}(s)$ comprises the mechanical suspension and the acoustic radiation load:
+\[
+Z_m^{\mathrm{tot}}(s) = s M_{\mathrm{ms}} + R_{\mathrm{ms}} + \frac{1}{s C_{\mathrm{ms}}} + Z_{\mathrm{rad}}(s).
+\]
+The radiation impedance is assumed to be dominated by its mass‑like part,
+\[
+Z_{\mathrm{rad}}(s) = s M_{\mathrm{ma}}(s) + Z_{\mathrm{rad,other}}(s),
+\]
+with $Z_{\mathrm{rad,other}}(s) \equiv 0$ in this analysis. The function $M_{\mathrm{ma}}(s)$ is the frequency‑dependent acoustic mass of the air load on the diaphragm. It is \textbf{exactly known} for every complex frequency $s$ from Boundary Element Method (BEM) calculations, given the fixed physical constants: sound speed $c$, air density $\rho$, and effective piston area $S_d$.
+
+Thus the impedance reduces to
+\[
+\boxed{
+Z_e(s) = R_e + s L_e + \frac{(Bl)^2}{s M_{\mathrm{ms}} + R_{\mathrm{ms}} + \frac{1}{s C_{\mathrm{ms}}} + s M_{\mathrm{ma}}(s)}.
+}
+\]
+For convenience we also write it in the rationalised form
+\[
+Z_e(s) = R_e + s L_e + \frac{(Bl)^2 s C_{\mathrm{ms}}}{1 + s C_{\mathrm{ms}} R_{\mathrm{ms}} + s^2 C_{\mathrm{ms}} M_{\mathrm{ms}} + s C_{\mathrm{ms}} Z_{\mathrm{ma}}(s)},
+\]
+where $Z_{\mathrm{ma}}(s) = s M_{\mathrm{ma}}(s)$.
+
+The unknown parameter vector is
+\[
+\theta = (R_e,\; L_e,\; Bl,\; R_{\mathrm{ms}},\; M_{\mathrm{ms}},\; C_{\mathrm{ms}})^\mathsf{T} \in \mathbb{R}_{>0}^6,
+\]
+(all components strictly positive). The goal is to prove that $\theta$ is structurally globally identifiable from the function $Z_e(s)$.
+
+\subsection*{Proof of Identifiability}
+
+\paragraph{Step 1: Electrical parameters from asymptotic behaviour.}
+Evaluate the low‑frequency limit $s \to 0$. The mechanical impedance $Z_m^{\mathrm{tot}}(s)$ becomes dominated by the compliance term $1/(s C_{\mathrm{ms}})$ and diverges, so the motional term vanishes:
+\[
+\lim_{s\to 0} Z_e(s) = R_e.
+\]
+Hence $R_e$ is uniquely identified as the DC resistance.
+
+Now consider the high‑frequency limit $s \to \infty$. The motional term behaves as
+\[
+\frac{(Bl)^2}{Z_m^{\mathrm{tot}}(s)} \sim \frac{(Bl)^2}{s\bigl(M_{\mathrm{ms}}+M_{\mathrm{ma}}(\infty)\bigr)} \xrightarrow{s\to\infty} 0,
+\]
+so
+\[
+Z_e(s) \sim s L_e \quad \text{as } s \to \infty.
+\]
+Thus the asymptotic slope gives the inductance:
+\[
+L_e = \lim_{s\to\infty} \frac{Z_e(s)}{s}.
+\]
+Both $R_e$ and $L_e$ are therefore globally identifiable from the limit behaviour of $Z_e(s)$.
+
+\paragraph{Step 2: Motional impedance and its reciprocal.}
+Subtract the identified electrical part to isolate the motional contribution:
+\[
+Z_{\mathrm{mot}}(s) \triangleq Z_e(s) - R_e - s L_e = \frac{(Bl)^2}{Z_m^{\mathrm{tot}}(s)}.
+\]
+Taking the reciprocal yields an admittance‑like function that is linear in the remaining unknown parameters:
+\[
+Y_{\mathrm{mot}}(s) \triangleq \frac{1}{Z_{\mathrm{mot}}(s)} = \frac{Z_m^{\mathrm{tot}}(s)}{(Bl)^2}.
+\]
+Substituting the expression for $Z_m^{\mathrm{tot}}$ gives
+\[
+Y_{\mathrm{mot}}(s) = \frac{1}{(Bl)^2}\left( R_{\mathrm{ms}} + s M_{\mathrm{ms}} + \frac{1}{s C_{\mathrm{ms}}} + s M_{\mathrm{ma}}(s) \right).
+\]
+Define the auxiliary coefficients
+\[
+\alpha = \frac{R_{\mathrm{ms}}}{(Bl)^2},\quad
+\beta  = \frac{M_{\mathrm{ms}}}{(Bl)^2},\quad
+\gamma = \frac{1}{C_{\mathrm{ms}}(Bl)^2},\quad
+\delta = \frac{1}{(Bl)^2}.
+\]
+Then $Y_{\mathrm{mot}}(s)$ is a linear combination of four known basis functions:
+\[
+\boxed{
+Y_{\mathrm{mot}}(s) = \alpha \cdot 1 \;+\; \gamma \cdot \frac{1}{s} \;+\; \beta \cdot s \;+\; \delta \cdot \bigl[ s M_{\mathrm{ma}}(s) \bigr].
+}
+\]
+
+\paragraph{Step 3: Linear independence of the basis functions.}
+Consider the set of meromorphic functions on $\mathbb{C}\setminus\{0\}$:
+\[
+\mathcal{B} = \{\,1,\; \tfrac{1}{s},\; s,\; s M_{\mathrm{ma}}(s)\,\}.
+\]
+The function $M_{\mathrm{ma}}(s)$ for a rigid circular piston is known to involve Bessel and Struve functions; it is \textbf{not} a rational function. Consequently, $s M_{\mathrm{ma}}(s)$ cannot be expressed as a finite linear combination of $1$, $1/s$, and $s$. Therefore the four functions in $\mathcal{B}$ are linearly independent over the field of complex numbers.
+
+\paragraph{Step 4: Unique determination of the coefficients.}
+Since $Y_{\mathrm{mot}}(s)$ is exactly known from the measurements and the linear independence of $\mathcal{B}$ holds, the representation of $Y_{\mathrm{mot}}(s)$ in this basis is unique. The coefficients $\alpha,\beta,\gamma,\delta$ are therefore uniquely identifiable from $Y_{\mathrm{mot}}(s)$. In practice they could be extracted, for instance, by evaluating limits:
+\[
+\alpha = \lim_{s\to 0} Y_{\mathrm{mot}}(s),\qquad
+\gamma = \lim_{s\to 0} s\, Y_{\mathrm{mot}}(s),\qquad
+\beta  = \lim_{s\to\infty} \frac{Y_{\mathrm{mot}}(s) - \delta\, s M_{\mathrm{ma}}(s)}{s},
+\]
+but any method that projects onto the dual basis yields unique scalar values.
+
+\paragraph{Step 5: Recovery of the original mechanical parameters.}
+Once the coefficients are known, the original parameters follow by elementary algebraic inversion:
+\begin{align*}
+Bl      &= \frac{1}{\sqrt{\delta}} \quad (\delta > 0), \\
+R_{\mathrm{ms}} &= \alpha (Bl)^2 = \frac{\alpha}{\delta}, \\
+M_{\mathrm{ms}} &= \beta (Bl)^2 = \frac{\beta}{\delta}, \\
+C_{\mathrm{ms}} &= \frac{1}{\gamma (Bl)^2} = \frac{\delta}{\gamma}.
+\end{align*}
+Each mapping is bijective (given positivity constraints). Thus all six parameters are uniquely determined.
+
+\paragraph{Conclusion.}
+From the impedance function $Z_e(s)$ measured over a continuous range of frequencies, and with exact knowledge of the radiation mass $M_{\mathrm{ma}}(s)$, the parameters $R_e$, $L_e$, $Bl$, $R_{\mathrm{ms}}$, $M_{\mathrm{ms}}$, and $C_{\mathrm{ms}}$ can be uniquely recovered. Therefore the Thiele--Small loudspeaker model is \textbf{structurally globally identifiable} with respect to this set of parameters.
+
+\end{document}

@@ -1,0 +1,26 @@
+\begin{circuitikz}[european]
+\tikzset{every node/.style={font=\large}}
+
+% Main horizontal path
+\draw (2.625,11) to[short] (6.375,11);
+\draw (6.375,11) to[european resistor, l_=$22\,\Omega$] (6.375,8.625);
+\draw (6.375,8.625) to[european resistor, l_=DUT] (6.375,6.375);
+
+% Ground
+\draw (6.375,6.375) to (6.375,6.25) node[sground]{};
+
+% Labels
+\node at (1.375,11) {Line out};
+
+% Branch to Ch 1
+\draw (6.375,11) to[short] (9.5,11);
+\node[right] at (9.5,11) {Line in, ch 1};
+
+% Branch to Ch 2
+\draw (6.375,8.625) to[short] (9.5,8.625);
+\node[right] at (9.5,8.625) {Line in, ch 2};
+
+% Series R label
+\node at (7.5,9.875) {series R};
+
+\end{circuitikz}

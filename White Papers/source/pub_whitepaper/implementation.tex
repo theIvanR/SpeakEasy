@@ -1,0 +1,110 @@
+\section{Implementation Overview (github.com/theIvanR/speakeasy)}
+
+Two primary objectives motivate the implementation:
+
+\begin{enumerate}
+  \item \textbf{Forwards Problem:} Given a set of Thiele–Small parameters (optionally extended with frequency-dependent terms), predict the loudspeaker’s electrical, mechanical, and acoustic performance—SPL, displacement, efficiency, impedance, etc.
+  \item \textbf{Reverse Problem:} For an unknown driver, use measured data (e.g., impedance or SPL curves) to identify the T/S parameters, possibly including extended ones such as frequency-dependent added mass or voice-coil inductance.
+\end{enumerate}
+
+
+\subsection{Forward Simulation Implementation}
+
+The core simulation is split into two files:
+
+\begin{itemize}
+  \item \texttt{simulate\_speaker\_full\_example.m} – a demo script that defines frequency grid, driver parameters, and configuration options, then calls the main solver.
+  \item \texttt{simulate\_speaker\_full.m} – the main function that performs the electroacoustic simulation.
+\end{itemize}
+
+\subsubsection{Main Function Overview}
+\texttt{simulate\_speaker\_full} accepts a frequency vector \texttt{f}, a parameter structure \texttt{p} (containing Thiele–Small data, air properties, and optional box parameters), and an options structure \texttt{opts}.  
+It returns a structured result with all computed quantities and optionally generates plots.
+
+\textbf{Key features:}
+\begin{itemize}
+  \item \textbf{Configurations:} \texttt{opts.cfg} selects \texttt{'single'}, \texttt{'series'} (ideal isobaric), \texttt{'parallel'}, or \texttt{'series\_parallel'}.  
+  \item \textbf{Enclosures:} infinite baffle (IB) and sealed box are always computed. The sealed box uses a compliance $C_{\text{box}}$ derived from volume $V_b$ and an optional damping coefficient $\alpha$ (for lossy box models).  
+  \item \textbf{Radiation models:} \texttt{opts.radiationModel} can be \texttt{'constant'} (low‑frequency series expansion), \texttt{'bessel'} (exact baffled piston), or \texttt{'bem'} (numerical ring‑BEM via a separate function \texttt{pistonBEM}).  
+  \item \textbf{Electrical and mechanical impedances:} built from the chosen radiation model, including the frequency‑dependent added mass $M_a(\omega)$.  
+  \item \textbf{Derived outputs:} SPL (reference distance $r_{\text{ref}}$), cone displacement, acoustic/electrical power, efficiency, and impedance magnitude/phase.  
+  \item \textbf{Resonance extraction:} The resonance frequency is found by locating the zero crossing of $\Im\{Z_m^{\text{tot}}\}$ (linear interpolation between grid points). From this, $M_a$ at resonance, effective mass, and $Q$ are computed.  
+  \item \textbf{Self‑consistent box tuning:} For a sealed box, the resonance is iteratively updated because $M_a$ depends on frequency; the routine \texttt{estimate\_self\_consistent\_box\_resonance} handles this.  
+  \item \textbf{Plots:} \texttt{opts.plot} controls the output – \texttt{'none'}, \texttt{'reduced'} (combined panel of displacement, SPL, efficiency), or \texttt{'full'} (separate figures for SPL, displacement, efficiency, impedance, powers, plus the reduced panel).
+\end{itemize}
+
+\subsubsection{Extending to Nonlinear / Time‑Varying Behavior}
+The code is modular; the nonlinear effects mentioned in the text (thermal drift, amplitude‑dependent compliance/damping, motor force variation) can be incorporated by replacing the constant parameters in \texttt{p} with functions that depend on instantaneous amplitude or temperature. Such extensions are straightforward because the core solver already separates the linear mechanical, electrical, and radiation blocks.
+
+
+
+\subsection{Inverse Problem Implementation}
+
+Extracting Thiele–Small parameters from an unknown driver is traditionally a multi-step ordeal. Commercial solutions are often locked behind expensive paywalls or provide incomplete access to the underlying physics. Academic toolboxes exist, but many are either not publicly available, poorly documented, or rely on outdated measurement techniques. DIY approaches typically involve a mix of:
+
+\begin{itemize}
+  \item \textbf{Added-mass methods:} attaching Blu-Tack or modelling clay to the cone to measure the shift in resonance frequency—a procedure that is messy, prone to error, and requires careful mass calibration.
+  \item \textbf{Vacuum chambers:} used to measure the driver in a near-vacuum to isolate mechanical parameters, which is impractical for most hobbyists.
+  \item \textbf{Separate impedance and SPL measurements:} often requiring anechoic conditions or complex gating, and then manually piecing together parameters from different tests.
+\end{itemize}
+
+These methods are not only cumbersome but also introduce significant uncertainty, especially for extended parameters like voice-coil inductance or frequency-dependent added mass.
+
+\paragraph{Our Approach: One-Shot, Hardware-Simple, Gradient-Based Extraction}
+
+We take a different route. The forward model described in the previous section is used as the basis for a nonlinear least‑squares fit. The only hardware required is:
+
+\begin{itemize}
+  \item A soundcard with at least two channels (e.g., a simple USB audio interface).
+  \item A precision resistor (typically $R_{\text{ref}} \approx 10\,\Omega$ to $100\,\Omega$) connected in series with the driver.
+  \item A computer running MATLAB (or Python) to generate a pertubation and record the response across the driver and the reference resistor.
+\end{itemize}
+
+From these two voltage measurements, the electrical impedance $Z_e(\omega)$ is computed directly in the frequency domain. No added mass, no vacuum, no anechoic chamber—just a simple electrical measurement. This impedance curve contains all the information needed to recover the T/S parameters.
+
+\subsubsection{Impedance Measurement with a Soundcard}
+
+The measurement is performed by a Python class \texttt{BodePlotter} that uses the \texttt{sounddevice} library. The key steps are:
+
+\begin{enumerate}
+  \item \textbf{Stimulus generation:} A band‑limited white noise signal is generated, filtered to the audio band (e.g., $20$–$20$kHz), and scaled to a desired RMS voltage. \textit{Why band‑limited white noise?} Unlike a swept sine, noise excites all frequencies simultaneously. This allows the transfer function to be estimated via cross‑correlation (Welch’s method) over the entire band in a single acquisition. Multiple averages are built into the Welch estimator, which dramatically improves signal‑to‑noise ratio and rejects uncorrelated disturbances (including nonlinear harmonics and background noise). Moreover, the coherence function becomes available as a direct quality metric—something a swept sine cannot provide without multiple measurements. The measurement is fast, robust against time‑variations, and easily repeatable.
+  \item \textbf{Playback and recording:} The stimulus is sent to the output channel; simultaneously two input channels record:
+        \begin{itemize}
+          \item Channel 1: voltage across the sense resistor (source side).
+          \item Channel 2: voltage across the DUT (driver side).
+        \end{itemize}
+  \item \textbf{Transfer function estimation:} Using Welch’s method, the cross‑spectral density $P_{yx}$ and the power spectral density $P_{xx}$ are computed. The transfer function $H = V_{\text{DUT}} / V_{\text{src}}$ is obtained as $H = \overline{P_{yx}} / P_{xx}$ (the conjugate ensures correct phase). This is a frequency‑domain representation of the input‑output cross‑correlation, which effectively averages over many time segments, suppressing noise and nonlinearities that are not correlated with the stimulus.
+  \item \textbf{Impedance calculation:} From the voltage divider equation,
+        \[
+        Z_{\text{DUT}}(\omega) = R_{\text{sense}} \frac{H(\omega)}{1 - H(\omega)},
+        \]
+        where $R_{\text{sense}}$ is the known series resistor.
+  \item \textbf{Coherence:} The coherence function $\gamma^2(\omega) = |P_{yx}|^2 / (P_{xx} P_{yy})$ is also computed. It indicates the degree of linear correlation between input and output. Frequency bins with low coherence (e.g., $<0.8$) are discarded, as they correspond to regions where the measurement is corrupted by noise or nonlinearities. This built‑in quality assessment is a key advantage over swept‑sine methods.
+\end{enumerate}
+
+The resulting impedance magnitude and phase are saved to a CSV file. The same setup can easily be extended for nonlinear measurements (e.g., using Volterra series or Wiener orthonormal bases) by injecting multi‑tone or stepped‑amplitude signals, and to capture parameter variations with bias current or signal level.
+
+\subsubsection{Parameter Fitting in MATLAB}
+
+With the measured impedance data, a MATLAB routine fits the T/S parameters using the same forward model \texttt{simulate\_speaker\_full}. The fitting process is:
+
+\begin{enumerate}
+  \item \textbf{Data cleaning:} The CSV is read, rows with coherence below a threshold (e.g., $0.8$) are discarded, and the data are optionally down‑sampled.
+  \item \textbf{Initial guess extraction:} The resonance frequency $f_s$, peak impedance $Z_{\text{peak}}$, and high‑frequency $R_e$ and $L_e$ are estimated directly from the impedance curve. The quality factors $Q_{\text{ms}}$ and $Q_{\text{es}}$ are derived, providing starting values for $Bl$, $R_{\text{ms}}$, and $M_{\text{ms}}$.
+  \item \textbf{Nonlinear optimization:} A Levenberg–Marquardt solver (\texttt{lsqnonlin}) minimizes the weighted complex residual between measured impedance $Z_{\text{meas}}$ and the model impedance $Z_{\text{model}}(\theta)$, where $\theta$ comprises the T/S parameters. The residual is defined as
+        \[
+        r = \left[ \frac{\Re\{Z_{\text{model}} - Z_{\text{meas}}\}}{\text{scale}} \cdot w, \; \frac{\Im\{Z_{\text{model}} - Z_{\text{meas}}\}}{\text{scale}} \cdot w \right]^{\mathsf{T}},
+        \]
+        with $\text{scale} = \max(|Z_{\text{meas}}|, 0.25\,R_e)$ and $w$ a weight proportional to coherence.
+  \item \textbf{Parameter extraction:} The optimization returns a complete set of T/S parameters, including $S_d$ (if not already known) and the extended parameters $L_e$ and $R_{\text{ms}}$. The result is a “TS++” parameter set that can be used directly for enclosure design, crossover simulation, and nonlinear extensions.
+\end{enumerate}
+
+The entire extraction is performed in one shot, using only a simple impedance measurement. The code is open and modular, making it easy to adapt for different driver configurations or to incorporate additional physics (e.g., frequency‑dependent inductance, mechanical nonlinearities). Because the same forward model is used for both simulation and parameter fitting, the extracted parameters are fully consistent with the simulated performance.
+
+\paragraph{Modularity and Beyond: Multi‑Driver Systems and Enclosure Measurements}
+
+The framework is designed from the ground up to be modular. The forward simulation routine \texttt{simulate\_speaker\_full} already accepts configuration options for multiple driver arrangements (\texttt{'single'}, \texttt{'series'}, \texttt{'parallel'}, \texttt{'series\_parallel'}) and for sealed enclosures (with volume $V_b$ and damping $\alpha$). This means the same fitting code can be used to characterize a complete loudspeaker system—for example, a pair of drivers in a sealed box—by simply changing the configuration and including the enclosure parameters in the model.
+
+When the system under test contains multiple drivers or a known enclosure, the optimization can directly estimate the effective parameters of the combined system. From these, the individual driver parameters can be recovered if the arrangement and box properties are known. Conversely, if the driver parameters are known, the fitting can be adapted to determine the enclosure volume or the added stiffness of a sealed box by treating $V_b$ (or $C_{\text{box}}$) as an additional free parameter. Minor modifications to the code (adding the box compliance to the mechanical impedance and including $V_b$ in the optimization vector) enable this capability.
+
+The modularity also extends to the measurement side: the same hardware and Python acquisition script can be used to collect impedance data for any passive electroacoustic network. By changing the stimulus parameters (e.g., amplitude, duration) and the post‑processing settings, the system can be used for nonlinear characterisation (Volterra series, Wiener orthonormal bases) or for measuring parameter drift under thermal stress—all without rewriting the core simulation engine.
