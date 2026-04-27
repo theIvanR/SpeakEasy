@@ -3,14 +3,14 @@ clear; clc; close all;
 addpath('functions')
 
 
-% A: Configure
+% A: Configure (TS operates in 0.5 - 5 F_res, set accordingly)
 % -------------------------
 cfg = struct();
 cfg.csvFile      = "example_data/impedance_bode_plot.csv";
 cfg.cohThreshold = 0.9;
 cfg.stride       = 1;
 cfg.fMin         = 30;
-cfg.fMax         = 300;
+cfg.fMax         = 300; 
 
 % TS Parameters
 p0 = struct();
