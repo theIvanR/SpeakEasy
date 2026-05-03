@@ -1,0 +1,585 @@
+\title{A Friendly Guide to Loudspeakers:\\
+From Small Signal T/S Parameters to Breakup Physics and Beyond}
+\date{\today}
+\author{Ivan Rodionov}
+
+\begin{document}
+\maketitle
+
+
+\newpage
+\section*{Overview}
+This document provides a stepwise approach to loudspeaker modeling with clear explanations on what is assumed, what is added, and how the T/S framework scales toward full-featured loudspeaker modeling. Throughout we adopt the Laplace-domain notation (complex frequency variable $s$) except where explicitly stated otherwise.
+
+\begin{enumerate}
+    \item \textbf{Thiele--Small foundation:} Start with the small-signal T/S model, relating input voltage $V_{\mathrm{in}}(s)$ to on-axis sound pressure $p(s)$ via lumped electrical and mechanical parameters.  
+    \item \textbf{Explicit assumptions:} Identify linearity, rigid-piston behavior, infinite baffle conditions, and far-field observation as the baseline simplifications.  
+    \item \textbf{Scaling to reality:} Extend the model to include voice-coil inductance, radiation loading, and directivity effects.  
+    \item \textbf{Generalization:} Reformulate in a modular, simulation-ready form that can be applied to arbitrary geometries, finite baffles, and code implementations.  
+\end{enumerate}
+
+\section*{Notation \& Assumptions}
+\begin{itemize}
+  \item Linear, time-invariant small-signal behavior unless otherwise noted.  
+  \item Constant motor strength $B\ell$ (no Bl(x) nonlinearity) for small excursions.  
+  \item Infinite, rigid baffle for "baffled piston" analytic formulas (half-space radiation).  
+  \item Far-field (Fraunhofer) approximations use $r\gg a^2/\lambda$ unless near-field terms are explicitly kept.  
+  \item Laplace domain: $s$ is used everywhere (if you want steady-state set $s\mapsto j\omega$).
+\end{itemize}
+
+\section{Symbol Table (select)}
+\begin{center}
+\begin{tabular}{llc}
+\toprule
+Symbol & Meaning & Units \\
+\midrule
+$V_{\mathrm{in}}(s)$ & input voltage & V \\
+$I(s)$ & coil current & A \\
+$Z_e(s)$ & electrical impedance (coil + electromechanical reflection) & $\Omega$ \\
+$B\ell$ & force factor (force per unit current) & $\mathrm{N\,A^{-1}}$ \\
+$S_d$ & piston radiating area & $\mathrm{m^2}$ \\
+$a$ & equivalent piston radius ( $S_d=\pi a^2$ ) & m \\
+$M_{\mathrm{ms}}$ & moving mass of driver (including cone/coil) & kg \\
+$C_{\mathrm{ms}}$ & mechanical compliance & m/N \\
+$R_{\mathrm{ms}}$ & mechanical losses (damping) & N s/m \\
+$Z_{\mathrm{rad}}^{\mathrm{ac}}(s)$ & acoustic radiation impedance (pressure / velocity) & Pa\;s/m \\
+$Z_{\mathrm{rad}}^{\mathrm{mech}}(s)$ & mechanical radiation impedance (force / velocity) & N\;s/m \\
+$k$ & acoustic wavenumber (Laplace) $k=\dfrac{s}{c}$ & $\mathrm{m^{-1}}$ \\
+$\rho_0$ & air density & kg/m$^3$ \\
+$c$ & speed of sound & m/s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+\newpage
+\section{Impedance Definitions}
+
+\subsection*{A. Electrical Impedance}
+Electrical impedance describes how the voice coil of the driver resists and reacts to an applied voltage across frequency. It is the combination of the coil’s inherent resistance and inductance, along with the reflected impedance of the driver’s moving system through the force factor (Bl). This reflection links the mechanical domain back into the electrical domain, meaning any change in the cone’s motion affects the measured electrical response. 
+\[
+Z_e(s) = R_e + sL_e + \frac{(B\ell)^2}{Z_m^{\text{tot}}(s)}
+\]
+where $Z_m^{\text{tot}}(s) = Z_m(s) + Z_{\mathrm{rad, mech}}(s)$ is the total mechanical impedance.
+
+\subsection*{B. Mechanical (Motional) Impedance}
+Mechanical impedance expresses how the driver’s moving assembly resists motion when a force is applied. It combines mechanical resistance Rms (losses in suspension and surround), mass Mms (inertia), and compliance Cms (spring-like suspension). This impedance governs how easily the cone can accelerate or decelerate in response to the input signal, and forms the bridge between the electrical input and acoustic output. 
+\begin{align*}
+Z_m(s) &= R_{\mathrm{ms}} + sM_{\mathrm{ms}} + \frac{1}{sC_{\mathrm{ms}}}
+\end{align*}
+\subsection*{C. Radiation Impedance (Mechanical and Acoustic Domain) from Rayleigh}
+This section starts from the Rayleigh (Kirchhoff) surface integral and follows a single logical path to the practical radiation models used in loudspeaker work: general operator, monopole limit, baffled-piston exact form, small-\(ka\) series (showing the algebraic step that yields the LF resistance and added mass), far-field algebraic simplification, conversion to mechanical radiation impedance, and finally the numerical ring-BEM fallback. All expressions are given in the Laplace domain with \(k=s/c\).
+
+\subsection{Rayleigh integral — general acoustic operator.}
+For an arbitrary radiating surface \(S\) with surface-normal velocity \(v(\mathbf{r}',s)\) the Laplace-domain Rayleigh integral gives the pressure at a field point \(\mathbf{r}\):
+\[
+\boxed{\;
+p(\mathbf{r},s)
+=\frac{s\rho_0}{2\pi}\iint_{S} v(\mathbf{r}',s)\,\frac{e^{-k|\mathbf{r}-\mathbf{r}'|}}{|\mathbf{r}-\mathbf{r}'|}\,dS'
+\;}
+\qquad\bigl(k=\tfrac{s}{c}\bigr).
+\]
+Define the average surface velocity and radiator area
+\[
+v_{\mathrm{avg}}(s)=\frac{1}{S_d}\iint_S v(\mathbf{r}',s)\,dS',\qquad S_d=\iint_S dS'.
+\]
+Then the acoustic velocity-to-pressure operator at \(\mathbf{r}\) (an impedance-like operator) is
+\[
+\boxed{\,Z_{\mathrm{rad}}^{\mathrm{ac}}(s;\mathbf{r})
+\;=\;\frac{p(\mathbf{r},s)}{v_{\mathrm{avg}}(s)}
+\;=\;\frac{s\rho_0}{2\pi}\frac{1}{v_{\mathrm{avg}}(s)}\iint_S v(\mathbf{r}',s)\frac{e^{-k|\mathbf{r}-\mathbf{r}'|}}{|\mathbf{r}-\mathbf{r}'|}\,dS'.\,}
+\]
+
+\subsection{Mechanical radiation impedance (force/velocity).}
+The mechanical radiation impedance (which enters the motional branch of the driver) is the total radiated force per (average) velocity:
+\[
+\boxed{\,Z_{\mathrm{rad}}^{\mathrm{mech}}(s)=\frac{F_{\mathrm{rad}}(s)}{v_{\mathrm{avg}}(s)}
+=\frac{1}{v_{\mathrm{avg}}(s)}\iint_S p_{\mathrm{near}}(\mathbf{r}',s)\,dS'\,}
+\]
+(units N·s/m). Under the uniform-face-pressure approximation (rigid piston with nearly uniform pressure) the two operators are related simply by area:
+\[
+\boxed{\,Z_{\mathrm{rad}}^{\mathrm{mech}}(s)\approx S_d\,Z_{\mathrm{rad}}^{\mathrm{ac}}(s)\,}
+\]
+(i.e. force \(\approx\) pressure \(\times\) area). Be explicit which form you use when assembling \(Z_m^{\mathrm{tot}}(s)\).
+
+\subsection{Monopole (spherical) limit — small radiator, far-field.}
+If the radiator is compact relative to the wavelength the total volume velocity is
+\[
+Q(s)=\iint_S v(\mathbf{r}',s)\,dS' = S_d\,v_{\mathrm{avg}}(s),
+\]
+and the Laplace-domain far-field on-axis pressure of a point monopole at distance \(r\) is
+\[
+\boxed{\,p_{\mathrm{mono}}(r,s)=\rho_0\,s\,\frac{Q(s)}{4\pi r}\,e^{-s r/c}
+=\rho_0\,s\,\frac{S_d}{4\pi r}\,v_{\mathrm{avg}}(s)\,e^{-s r/c}\,}
+\]
+so the monopole acoustic impedance (velocity-to-pressure) is
+\[
+\boxed{\,Z_{\mathrm{mono}}^{\mathrm{ac}}(s,r)=\rho_0\,s\,\frac{S_d}{4\pi r}\,e^{-s r/c}\,.}
+\]
+This is causal (contains \(e^{-s r/c}\)) and useful as the small-source algebraic approximation.
+
+\subsection{Baffled circular piston — exact on-axis (Bessel/Hankel) form.}
+For a rigid circular piston of radius \(a\) in an infinite rigid baffle the Rayleigh integral evaluates on-axis to a closed-form involving Bessel functions. With \(S_d=\pi a^2\) and \(k=s/c\):
+\[
+\boxed{\,Z_{\mathrm{piston}}^{\mathrm{ac}}(s)
+= \rho_0 c S_d\Bigl(1 - \frac{J_1(2ka)}{ka}\Bigr)
+\;+\; \rho_0 c S_d\Bigl(\frac{2}{\pi k a}Y_1(2ka)\Bigr)\,}
+\]
+This is the exact (on-axis) acoustic velocity-to-pressure operator as a complex function of \(s\). On the \(s=j\omega\) axis the first bracket produces the resistive contribution and the second bracket the reactive contribution.\\
+\textbf{Numerical note:} evaluate the exact Bessel/Hankel expression carefully for small \(|ka|\). Although not singular, the representation contains terms with \(1/(ka)\) that cause cancellation and loss of precision as \(ka\to 0\). Use series expansions (Taylor) for \(|ka|\ll1\) or robust special-function libraries that support complex arguments.
+
+\subsection{Small-\(ka\) (Taylor) expansion — algebraic derivation of LF resistance and added mass.}
+We now show how the exact piston form reduces to the familiar low-frequency lumped expressions by algebraic expansion.
+
+Start with the small-argument expansion for \(J_1(x)\) (with \(x=2ka\)):
+\[
+J_1(x)=\frac{x}{2}-\frac{x^3}{16}+O(x^5).
+\]
+Hence
+\[
+\frac{J_1(2ka)}{ka}=1-\frac{(ka)^2}{2}+O((ka)^4).
+\]
+Substitute this into the first bracket of the exact piston expression:
+\[
+\rho_0 c S_d\Bigl(1-\frac{J_1(2ka)}{ka}\Bigr)\approx \rho_0 c S_d\cdot\frac{(ka)^2}{2}.
+\]
+Thus the leading low-frequency radiation resistance is
+\[
+\boxed{\,R_{\mathrm{rad}}(s)\approx \rho_0 c S_d\;\frac{(ka)^2}{2}
+=\rho_0 c S_d\;\frac{(s a / c)^2}{2}\,.}
+\]
+
+The leading reactive (near-field / added-mass) term comes from the matched expansion of the second (Hankel/Y\(_1\)) term. Carrying out this matched-series expansion (standard result) yields
+\[
+\boxed{\,X_{\mathrm{rad}}(s)\approx \rho_0 c S_d\;\frac{8\,ka}{3\pi}
+=\rho_0 S_d\frac{8 a}{3\pi}\,s\,.}
+\]
+Therefore the low-frequency added mass (kg) is
+\[
+\boxed{\,M_{a,\mathrm{LF}}=\frac{X_{\mathrm{rad}}(s)}{s}
+=\rho_0 S_d\frac{8 a}{3\pi}
+=\frac{8}{3}\rho_0 a^3\,.}
+\]
+(Equivalently \(M_a=\rho_0 S_d \varepsilon_{\mathrm{LF}}\) with \(\varepsilon_{\mathrm{LF}}=8a/(3\pi)\).)
+
+\subsection{Where the LF expansion breaks down (practical guidance).}
+\begin{itemize}
+  \item The \((ka)^2/2\) resistance and \(8ka/(3\pi)\) reactance are the first nonzero terms of the Bessel/Hankel expansion and are valid only for \(|ka|\ll1\).  
+  \item Conservative rule-of-thumb: \(|ka|\lesssim 0.3\) for errors \(\lesssim 10\%\). For \(ka\sim O(1)\) diffractive and directivity effects dominate; higher-order oscillatory terms from the exact expression become important.  
+  \item The reactive (added-mass) term is near-field stored energy and shifts the mechanical resonance \(f_s\); incorrect added-mass factors change low-frequency SPL / resonance predictions.
+\end{itemize}
+
+\subsection{Far-field on-axis algebraic simplification (baffled case).}
+When the observer is in the far field (Fraunhofer condition; typically \(r\gg a^2/\lambda\)), the spatial integral approximately factors and the on-axis pressure becomes monopole-like with the half-space prefactor (baffle):
+\[
+p_{\mathrm{piston,on\text{-}axis}}(r,s)\approx \rho_0\,s\,\frac{S_d}{2\pi r}\,v_{\mathrm{avg}}(s)\,e^{-s r/c}.
+\]
+Hence the far-field baffled-on-axis acoustic impedance is
+\[
+\boxed{\,Z_{\mathrm{baffled,on\text{-}axis}}^{\mathrm{ac}}(s,r)
+=\rho_0\,s\,\frac{S_d}{2\pi r}\,e^{-s r/c}\,.}
+\]
+(Physically: full-space monopole has denominator \(4\pi r\); the baffle restricts radiation to half-space giving the \(2\pi r\) factor.)\\
+
+\textbf{When it is safe to drop \(e^{-s r/c}\) like in the classic TS model?}
+Dropping the exponential is acceptable when:
+\begin{itemize}
+  \item the model targets low frequencies where the phase delay across the band is negligible, or
+  \item the application is sensitivity-level estimation, low-order control design, or steady-state SPL prediction where exact phase is not required, and
+  \item \(r\) is fixed and large enough that the delay manifests mainly as an (almost) constant group delay over the modeled band.
+\end{itemize}
+If causal time-domain accuracy or controller-phase matching is required, keep \(e^{-s r/c}\) or substitute a Pad\'e approximation.
+
+\subsection{Converting acoustic operator to mechanical radiation impedance for motional branch.}
+If the mechanical model uses the integrated radiated force, under uniform-face-pressure
+\[
+Z_{\mathrm{rad}}^{\mathrm{mech}}(s)\approx S_d\,Z_{\mathrm{rad}}^{\mathrm{ac}}(s).
+\]
+Therefore inserting the far-field algebraic form into the mechanical branch gives (delay dropped if desired)
+\[
+Z_{\mathrm{rad,mech}}(s)\approx S_d\cdot\frac{\rho_0 s S_d}{2\pi r} = \frac{\rho_0 s S_d^2}{2\pi r},
+\]
+which shows explicitly the \(S_d^2\) scaling in the mechanical domain when using an acoustic numerator proportional to \(S_d\).
+
+\subsection{Ring-based numerical BEM (full \(ka\), arbitrary \(v(r)\)).}
+For accuracy at all \(ka\), for non-uniform velocity, or for finite-baffle/array interactions discretize the radiator into \(N\) rings (areas \(dS_i\)) and use the causal Laplace-domain Green's function \(G(r_i,r_j,\theta)=e^{-kR_{ij}}/R_{ij}\) with
+\[
+R_{ij}=\sqrt{r_i^2+r_j^2-2r_ir_j\cos\theta}.
+\]
+The Laplace-domain mutual mechanical impedance between rings \(i,j\) (with \(M\)-point angular quadrature) is
+\[
+Z_{ij}(s)\approx\frac{s\rho_0}{4\pi}\,dS_i\,dS_j\;\frac{1}{M}\sum_{m=1}^M\frac{e^{-kR_{ij,m}}}{R_{ij,m}},
+\]
+and
+\[
+Z_{\mathrm{rad,BEM}}(s)=\sum_{i=1}^N\sum_{j=1}^N Z_{ij}(s),\qquad
+M_a(s)=\frac{\Im\{Z_{\mathrm{rad,BEM}}(s)\}}{s}.
+\]
+
+\subsection{Implementation and numerical notes}
+\begin{itemize}
+  \item Treat the weak self-term ( \(i=j\) ) analytically or with refined quadrature; verify convergence by mesh refinement.  
+  \item Evaluate Bessel/Y functions for complex arguments with a robust special-function library when using the exact piston form.  
+  \item When building rational approximants (Padé, vector fitting) for time-domain simulation compute on the Laplace axis so causality is preserved.  
+  \item Explicitly state where you drop \(e^{-s r/c}\) (delay) — mixing delay-free numerators with high-fidelity mechanical \(Z_m^{\mathrm{tot}}(s)\) is permissible but must be justified.
+\end{itemize}
+
+\subsection{Key Takeaways}
+\begin{itemize}
+    \item \textbf{Constant Model:} Best for low frequencies; very simple and fast.
+    \item \textbf{Bessel Function Model:} Suitable for high frequencies; moderate complexity.
+    \item \textbf{BEM Model:} Accurate across all frequencies; moderate complexity.
+\end{itemize}
+
+
+\newpage
+\section{Unified Transfer Function Derivation}
+
+\subsection{Voltage-to-velocity, radiation field, and electrical impedance}
+
+For a rigid piston-like diaphragm moving with average velocity \(v_{\mathrm{avg}}(s)\), the electromechanical coupling gives
+\[
+v_{\mathrm{avg}}(s)=\frac{B\ell}{Z_m^{\mathrm{tot}}(s)}\,I(s)
+=\frac{B\ell}{Z_m^{\mathrm{tot}}(s)}\cdot\frac{V_{\mathrm{in}}(s)}{Z_e(s)}.
+\]
+Thus the voltage-to-velocity transfer function is
+\[
+H_v(s)\triangleq\frac{v_{\mathrm{avg}}(s)}{V_{\mathrm{in}}(s)}
+=\frac{B\ell}{Z_m^{\mathrm{tot}}(s)\,Z_e(s)}.
+\]
+
+The acoustic pressure at an arbitrary observation point \(\mathbf{r}\) is generated by the linear radiation operator \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\):
+\[
+p(\mathbf{r},s)=\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\;v_{\mathrm{avg}}(s).
+\]
+The operator \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\) can be derived from the Rayleigh integral, a boundary-element method (BEM) solve, a Green's function, or an analytical approximation (e.g., baffled piston far-field). The voltage-to-pressure transfer function then follows as
+\[
+H_p(s,\mathbf{r})\triangleq\frac{p(\mathbf{r},s)}{V_{\mathrm{in}}(s)}
+=\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\,H_v(s).
+\]
+
+\subsection{General radiation operator: from surface integral to lumped model}
+
+For a radiating surface \(S\) (the driver diaphragm) with local normal velocity \(v(\mathbf{x},s)\) at point \(\mathbf{x}\in S\), the acoustic pressure at an observation point \(\mathbf{r}\) in the Laplace domain is given by the Rayleigh integral (or its generalised form for arbitrary baffle conditions):
+\[
+\boxed{
+p(\mathbf{r},s) = \frac{s\rho_0}{2\pi} \iint_S v(\mathbf{x},s) \, \frac{e^{-k R(\mathbf{r},\mathbf{x})}}{R(\mathbf{r},\mathbf{x})} \, dS(\mathbf{x})
+},
+\]
+where \(k = s/c\) and \(R(\mathbf{r},\mathbf{x}) = |\mathbf{r} - \mathbf{x}|\). This is the most general linear relation between the surface velocity distribution and the field pressure.
+
+The operator \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\) is therefore an integral operator:
+\[
+p(\mathbf{r},s) = \int_S G(\mathbf{r},\mathbf{x},s)\, v(\mathbf{x},s) \, dS(\mathbf{x}),
+\]
+with kernel \(G(\mathbf{r},\mathbf{x},s) = \frac{s\rho_0}{2\pi} \frac{e^{-kR}}{R}\) (for an infinite baffle; modify for other boundary conditions).
+
+\subsubsection{Collapsed piston approximation}
+
+If the diaphragm moves as a rigid piston with uniform velocity \(v_{\mathrm{avg}}(s) = \frac{1}{S_d}\iint_S v(\mathbf{x},s)\,dS\) and the observation point is in the far field (or the surface is small compared to wavelength), the integral simplifies:
+\[
+p(\mathbf{r},s) \approx \frac{s\rho_0 S_d}{2\pi r}\, e^{-sr/c}\, v_{\mathrm{avg}}(s) \quad \text{(far-field, baffled)}.
+\]
+This yields the familiar scalar operator \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s) \approx \frac{\rho_0 S_d s}{\Omega r} e^{-sr/c}\) with \(\Omega = 2\pi\) for half‑space.
+
+\subsubsection{When the collapsed model fails}
+
+The uniform‑velocity assumption breaks down when:
+\begin{itemize}
+  \item The diaphragm exhibits **cone breakup** (flexural modes) — typical above a few kilohertz.
+  \item The velocity distribution is intentionally non‑uniform (e.g., dome tweeters with surround elasticity).
+  \item Near‑field or high‑precision modelling is required (e.g., microphone calibration, array design).
+\end{itemize}
+In such cases, the full integral must be used, which can be discretised via BEM or ring‑element methods.
+
+\subsubsection{Consistency with mechanical radiation impedance}
+
+The mechanical radiation impedance \(Z_{\mathrm{rad}}(s)\) is defined from the total force exerted by the fluid on the surface:
+\[
+F_{\mathrm{rad}}(s) = \iint_S p_{\mathrm{near}}(\mathbf{x},s) \, dS(\mathbf{x}),
+\]
+where \(p_{\mathrm{near}}\) is the pressure on the surface. For a rigid piston with uniform velocity, this reduces to the scalar relation \(Z_{\mathrm{rad}}(s) = S_d \, Z_{\mathrm{rad}}^{\mathrm{ac}}(s)\). For general velocity distributions, it becomes an impedance matrix coupling different parts of the surface.
+
+In the modular decomposition \(Z_m^{\mathrm{tot}} = Z_{\mathrm{driver}} + Z_{\mathrm{rad}} + Z_{\mathrm{enclosure}}\), the term \(Z_{\mathrm{rad}}(s)\) is now understood as the **effective scalar radiation impedance** seen by the average velocity. This effective impedance can be obtained by projecting the full impedance matrix onto the assumed mode shape (usually the rigid‑body mode). If breakup modes are important, the model must be extended to multiple degrees of freedom.
+
+\subsubsection{Practical implementation for rigid pistons}
+
+For most loudspeaker design up to the breakup frequency, the rigid‑piston assumption is sufficient. In that case:
+\begin{itemize}
+  \item Use the full Rayleigh integral (numerically integrated over the cone) to compute both \(Z_{\mathrm{rad}}(s)\) and \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\) consistently.
+  \item The average velocity is then the only mechanical state variable, and the collapsed formulation is exact (within the rigid assumption).
+\end{itemize}
+For a circular piston in an infinite baffle, the on‑axis pressure and the radiation impedance have closed forms (Bessel/Hankel); for arbitrary shapes or baffles, use numerical quadrature or BEM.
+
+\subsection{Total mechanical impedance — modular decomposition}
+
+The total mechanical impedance seen by the motor is the sum of three physically independent contributions:
+\[
+\boxed{Z_m^{\mathrm{tot}}(s)=Z_{\mathrm{driver}}(s)+Z_{\mathrm{rad}}(s)+Z_{\mathrm{enclosure}}(s)}.
+\]
+
+\noindent
+\textbf{1. Pure driver impedance} (intrinsic mechanical motion):
+\[
+\boxed{Z_{\mathrm{driver}}(s)=R_{\mathrm{ms}}+sM_{\mathrm{ms}}+\frac{1}{sC_{\mathrm{ms}}}}.
+\]
+This contains only the driver's own mechanical resistance, moving mass, and suspension compliance — the parameters measured with no external acoustic load (except free air, which already includes low-frequency added mass; see note below).
+
+\noindent
+\textbf{2. Full radiation impedance} (mechanical side):
+\[
+\boxed{Z_{\mathrm{rad}}(s)=R_{\mathrm{rad}}(s)+sM_{\mathrm{ma}}(s)}.
+\]
+Here
+\begin{itemize}
+  \item \(M_{\mathrm{ma}}(s)\) is the frequency-dependent added mass (reactive near-field energy storage).
+  \item \(R_{\mathrm{rad}}(s)\) is the frequency-dependent radiation resistance (real power radiated away).
+\end{itemize}
+Both arise from the same acoustic problem and are obtained together — e.g., as the real and imaginary parts of the self‑loading computed via BEM or the Rayleigh integral.
+
+\noindent
+\textbf{3. Enclosure impedance} (rear loading and internal losses):
+\[
+\boxed{Z_{\mathrm{enclosure}}(s)=\text{rear acoustic loading reflected to the mechanical side}}.
+\]
+This accounts for any structure that loads the diaphragm from the rear: sealed-box compliance, vented-box Helmholtz resonator, stuffing resistance, passive radiator, or a rear horn. For an open baffle (no enclosure), \(Z_{\mathrm{enclosure}}(s)=0\).
+
+The total mechanical impedance explicitly becomes
+\[
+Z_m^{\mathrm{tot}}(s)=
+s\bigl(M_{\mathrm{ms}}+M_{\mathrm{ma}}(s)\bigr)
++R_{\mathrm{ms}}
++\frac{1}{sC_{\mathrm{ms}}}
++R_{\mathrm{rad}}(s)
++Z_{\mathrm{enclosure}}(s).
+\]
+
+\subsection{Electrical impedance}
+
+The electrical impedance at the voice-coil terminals includes the reflected motional term:
+\[
+\boxed{Z_e(s)=R_e+sL_e+\frac{(B\ell)^2}{Z_m^{\mathrm{tot}}(s)}}.
+\]
+Substituting the explicit mechanical impedance yields
+\[
+\boxed{
+Z_e(s)=R_e+sL_e+
+\frac{(B\ell)^2}{
+s\bigl(M_{\mathrm{ms}}+M_{\mathrm{ma}}(s)\bigr)
++R_{\mathrm{ms}}
++\dfrac{1}{sC_{\mathrm{ms}}}
++R_{\mathrm{rad}}(s)
++Z_{\mathrm{enclosure}}(s)
+}.
+}
+\]
+
+\subsection{General voltage-to-pressure transfer function}
+
+Combining the above gives the most general linear transfer function:
+\[
+\boxed{
+H_p(s,\mathbf{r})=
+\frac{p(\mathbf{r},s)}{V_{\mathrm{in}}(s)}
+=
+\frac{B\ell\;\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)}
+{(B\ell)^2+\bigl(R_e+sL_e\bigr)\,Z_m^{\mathrm{tot}}(s)}
+}.
+\]
+Equivalently, with the explicit mechanical impedance:
+\[
+\boxed{
+H_p(s,\mathbf{r})=
+\frac{B\ell\;\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)}
+{(B\ell)^2+\bigl(R_e+sL_e\bigr)
+\left[
+s\bigl(M_{\mathrm{ms}}+M_{\mathrm{ma}}(s)\bigr)
++R_{\mathrm{ms}}
++\dfrac{1}{sC_{\mathrm{ms}}}
++R_{\mathrm{rad}}(s)
++Z_{\mathrm{enclosure}}(s)
+\right]
+}.
+}
+\]
+
+\subsection{Relation to classical Thiele–Small models}
+
+Classical T/S is recovered by:
+\begin{itemize}
+  \item Using the low-frequency, directivity-free far-field approximation
+    \[
+    \mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\approx \frac{\rho_0 S_d s}{\Omega r}\,e^{-sr/c},
+    \]
+    where \(\Omega=2\pi\) for half-space (infinite baffle), \(4\pi\) for free space, and other values only as geometric low-frequency factors.
+  \item Neglecting the frequency dependence of \(M_{\mathrm{ma}}(s)\) (set to constant low-frequency added mass \(\frac{8}{3}\rho_0 a^3\)).
+  \item Ignoring \(R_{\mathrm{rad}}(s)\) entirely (justified at low frequencies where \(R_{\mathrm{rad}}\ll R_{\mathrm{ms}}\)).
+  \item Selecting the appropriate \(Z_{\mathrm{enclosure}}(s)\) for sealed or vented boxes.
+\end{itemize}
+For many modern applications (wideband drivers, open baffles, horns, or high-frequency simulation), the full modular form above is necessary.
+
+\subsection{Practical enclosure and loading forms}
+
+All enclosure impedances are expressed on the mechanical side (force per velocity). Conversion from acoustic impedance uses the factor \(S_d^2\) where appropriate.
+
+\paragraph{Sealed enclosure (undamped):}
+\[
+\boxed{Z_{\mathrm{enclosure}}^{\text{sealed}}(s)=\frac{1}{s\,C_{\mathrm{ab}}\,S_d^2}},\qquad
+C_{\mathrm{ab}}=\frac{V_b}{\rho_0 c^2}.
+\]
+
+\paragraph{Sealed enclosure with damping (stuffing):}
+A simple model places a stuffing resistance in parallel with the box compliance:
+\[
+\boxed{Z_{\mathrm{enclosure}}^{\text{sealed+damped}}(s)
+=\left(\frac{1}{s\,C_{\mathrm{ab}}\,S_d^2}\right)\parallel R_{\mathrm{stuff}}(s)}.
+\]
+More accurate models use frequency-dependent \(R_{\mathrm{stuff}}(s)\) or a series resistance; the parallel form is a convenient first approximation.
+
+\paragraph{Ported (vented) enclosure:}
+\[
+\boxed{Z_{\mathrm{enclosure}}^{\text{ported}}(s)
+=S_d^2\left(
+\frac{1}{sC_{\mathrm{ab}}}
+\parallel
+\bigl(sM_{\mathrm{ap}}+R_{\mathrm{ap}}\bigr)
+\right)},
+\]
+where \(M_{\mathrm{ap}}\) is the acoustic mass of the port (including end corrections) and \(R_{\mathrm{ap}}\) accounts for viscous and radiation losses at the port.
+
+\paragraph{Passive radiator:}
+A passive radiator adds an additional mass-spring-damper branch coupled to the box compliance. Its mechanical impedance (referred to the driver cone) is
+\[
+Z_{\mathrm{pr}}(s)=\frac{S_d^2}{S_{\mathrm{pr}}^2}\left(sM_{\mathrm{pr}}+\frac{1}{sC_{\mathrm{pr}}}+R_{\mathrm{pr}}\right),
+\]
+and it appears in parallel with the box compliance inside \(Z_{\mathrm{enclosure}}(s)\).
+
+\paragraph{Horn loading:}
+A front-loaded horn is best treated as part of the radiation operator \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\) and the radiation impedance \(Z_{\mathrm{rad}}(s)\). For a rear-loaded horn, it contributes to \(Z_{\mathrm{enclosure}}(s)\) via a transmission-line or transfer-matrix model. In either case, the modular separation remains valid.
+
+\subsection{Key physical relationships}
+
+\begin{align*}
+\text{Velocity to pressure:} &\quad p(\mathbf{r},s)=\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\,v(s),\\
+\text{Displacement to pressure:} &\quad p(\mathbf{r},s)=\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\,s\,x(s),\\
+\text{Acceleration to pressure:} &\quad p(\mathbf{r},s)=\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\,\frac{1}{s}\,a(s).
+\end{align*}
+Thus the three forms are consistent; only the kinematic variable differs.
+
+\subsection{Modeling and implementation notes}
+
+\begin{itemize}
+  \item \textbf{Consistency} between \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\) and \(Z_{\mathrm{rad}}(s)\): They must derive from the same acoustic model (e.g., the same BEM solve) to maintain reciprocal coupling between mechanical loading and sound generation.
+  \item \textbf{Propagation delay} is naturally included in \(\mathcal{G}_{\mathrm{rad}}(\mathbf{r},s)\) when using the retarded Green's function (e.g., \(e^{-kR}/R\) in the Laplace domain). For far-field algebraic approximations, retain the factor \(e^{-sr/c}\) explicitly.
+  \item \textbf{Non-rigid diaphragms} (cone breakup, flexural modes) invalidate the scalar average velocity assumption. For such cases, a distributed surface velocity model or a multi-degree-of-freedom modal expansion is required, but the modular structure can be extended by replacing the scalar \(v_{\mathrm{avg}}(s)\) with a vector of modal velocities.
+  \item \textbf{Numerical implementation:} Compute \(Z_{\mathrm{rad}}(s)\) via BEM or the Rayleigh integral on the desired frequency grid. Store both real and imaginary parts as two vectors. Use rational approximation (e.g., vector fitting) if a state-space model is needed for time-domain simulation.
+  \item \textbf{Low-frequency limits:} When \(ka\ll1\), \(M_{\mathrm{ma}}\) approaches a constant \(\frac{8}{3}\rho_0 a^3\) (for a baffled piston) and \(R_{\mathrm{rad}}\) is proportional to \(\omega^2\). In that regime, the classical T/S model works well.
+\end{itemize}
+
+\section{Region Overview}
+\textbf{In general TS parameters are designed for accurate modelling within 0.5 to 5 $f_s$.}
+
+\subsection{Frequency-Domain Physics and Design Implications}
+\begin{center}
+\small
+\begin{tabular}{|c|c|c|l|}
+\hline
+\textbf{Frequency Range} & \textbf{Dominant Physics} & \textbf{Pressure relation (dominant)} & \textbf{Design Focus} \\
+\hline
+$f < f_s$ & Suspension compliance dominates & $p\propto s^2 x$ (radiation small) & \begin{tabular}[c]{@{}l@{}}- Excursion limits\\- $X_{\text{max}}$ optimisation\\- High-compliance suspension\end{tabular} \\
+\hline
+$f_s < f < f_e$ & Mass control (inertia) & $p\propto s v$ & \begin{tabular}[c]{@{}l@{}}- Sensitivity optimisation\\- Motor strength $(B\ell)$\\- Low $M_{\text{ms}}$\end{tabular} \\
+\hline
+$f > f_e$ & Voice coil inductance & electrical rolloff affects drive & \begin{tabular}[c]{@{}l@{}}- Shorting rings\\- Copper caps\\- Crossover compensation\end{tabular} \\
+\hline
+$f > f_{\text{rad}}$ & Radiation directivity / lobing & $p$ shows strong $ka$ dependence & \begin{tabular}[c]{@{}l@{}}- Piston size optimisation\\- Dome vs cone tweeters\\- Phase plugs\end{tabular} \\
+\hline
+\end{tabular}
+\end{center}
+
+where
+\begin{align*}
+f_s &= \frac{1}{2\pi\sqrt{(M_{\mathrm{ms}} + M_a)C_{\mathrm{ms}}}} & \text{(Resonance frequency)} \\
+f_e &= \frac{R_e}{2\pi L_e} & \text{(Inductive rolloff, rough)} \\
+f_{\text{rad}} &= \frac{c}{2\pi a} & \text{(frequency at which $ka\sim1$)} \\
+a &= \sqrt{S_d/\pi} & \text{(Equivalent piston radius)}
+\end{align*}
+
+\subsection{Speakers in Series (isobaric) and Parallel}
+\textbf{Assumption: $r\ll\lambda$ and isobaric cavity mass negligible.}
+\small
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Configuration} & $\mathbf{S}$ & $\mathbf{C}$ & $\mathbf{V_{\mathrm{as}}}$ & $\mathbf{P_{\max}}$ & $\Delta L_p$ \\
+ & (Radiating area) & (Compliance) & (Eq. volume) & (Power handling) & (vs. single) \\
+\midrule
+Single driver & 
+$S$ & 
+$C$ & 
+$V_{\mathrm{as}}$ & 
+$P$ & 
+$0\,\mathrm{dB}$ \\
+
+Isobaric/Series pair & 
+$S$ & 
+$\tfrac{C}{2}$ & 
+$\tfrac{V_{\mathrm{as}}}{2}$ & 
+$2P$ & 
+$\begin{cases}
+0\,\mathrm{dB}, & P\ (\text{same total})\\
++3\,\mathrm{dB}, & 2P\ (\text{doubled})
+\end{cases}$ \\
+
+Two drivers in parallel & 
+$2S$ & 
+$2C$ & 
+$2V_{\mathrm{as}}$ & 
+$2P$ & 
+$\begin{cases}
++3\,\mathrm{dB}, & P\ (\text{same total})\\
++6\,\mathrm{dB}, & 2P\ (\text{doubled})
+\end{cases}$\\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{Table:} Comparison of a single driver, an isobaric pair, and two drivers in parallel (coherent; otherwise -3 dB when incoherent)
+\end{center}
+
+\newpage
+\subsection{Source Addition in Spherical Speaker Arrays}
+
+\subsubsection{Principles at the Listening Point}
+\begin{itemize}
+  \item \textbf{Coherent sources:} sources with fixed phase and frequency relationships; sound pressures add linearly: $p_{\mathrm{total}}=N\cdot p_{\mathrm{single}}$. Level increases by $20\log_{10}N$.  
+  \item \textbf{Incoherent sources:} intensities add, pressures combine statistically as root-sum-square: $p_{\mathrm{total}}=\sqrt{N}\,p_{\mathrm{single}}$. Level increases by $10\log_{10}N$.
+\end{itemize}
+
+\subsubsection{Arbitrary Speaker Scaling by Solid Angle}
+For a sound source with known reference SPL $L_{p,\mathrm{ref}}$ at $P_{\mathrm{ref}}=1\,\mathrm{W}$, $r_{\mathrm{ref}}=1\,$m and reference solid angle $\Omega_0=4\pi$ the general scaling is
+\[
+L_p(r,P,\Omega)=L_{p,\mathrm{ref}}+10\log_{10}\left(\frac{P}{P_0}\right)-20\log_{10}\left(\frac{r}{r_0}\right)+10\log_{10}\left(\frac{\Omega_0}{\Omega}\right).
+\]
+
+\begin{center}  % centers the table
+\begin{tabular}{lcc}
+\toprule
+Geometry & Solid Angle $\Omega$ & Level Gain [dB] \\
+\midrule
+Spherical wave (free field)       & $4\pi$          & $0\,\mathrm{dB}$  \\
+Half-space (baffle)               & $2\pi$          & $+3.01\,\mathrm{dB}$ \\
+Quarter-space (corner)            & $\pi$           & $+6.02\,\mathrm{dB}$ \\
+Eighth-space (floor \& corner)   & $\frac{\pi}{2}$ & $+9.03\,\mathrm{dB}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+% Add References
+\newpage
+\input{pub_whitepaper/references}
+
+
+
+\end{document}
