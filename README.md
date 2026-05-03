@@ -22,9 +22,11 @@ Turn any PC with a stereo line‑in/out into an **accurate impedance measurement
 - **Example:** measure a loudspeaker’s electrical impedance from 20 Hz to 20 kHz with a simple voltage divider (one sense resistor).
 
 ```yaml
-Soundcard line out --> series resistor (e.g., 22 Ω) --> driver --> soundcard line in (channel 2)
-                 |
-                 --> soundcard line in (channel 1)
+                                                          --> soundcard line in (channel 2)
+                                                         |
+Soundcard line out --+--> series resistor (e.g., 22 Ω) --+--> driver --> gnd
+                     |
+                      --> soundcard line in (channel 1)
 ```
 
 ### 2. Forward Thiele‑Small solver (MATLAB) – *release*
