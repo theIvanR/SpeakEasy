@@ -6,7 +6,8 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
 %
 % Main fixes:
 %   - soft fs anchor to measured fs0
-%   - physically realistic bounds
+%   - pass-1 broad physical bounds
+%   - pass-2 Fisher-informed adaptive trust bounds
 %   - finite-difference Jacobian
 %   - Fisher/SVD prior for sloppy directions
 %
@@ -42,7 +43,10 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
         'priorSigmaMax', 10.0, ...
         'priorSharpness', 1.5, ...
         'priorUsePass1SVD', true, ...
-        'includePriorInFisher', true));
+        'includePriorInFisher', true, ...
+        'trustMinLogWidth', log(1.10), ...
+        'trustMaxLogWidth', log(2.0), ...
+        'fisherTrustSigma', 2.0));
 
     validate_columns(df_clean, {'frequency_hz','Z_mag_ohm','Z_phase_deg','Coherence'});
 
@@ -65,7 +69,7 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
         error('Could not estimate an initial resonance frequency.');
     end
 
-    cfg.fs0 = fs0; % used by the fs anchor
+    cfg.fs0 = fs0;
 
     % ---------------------------------------------------------------------
     % Fit band selection around fs0
@@ -110,10 +114,11 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
     Mms0 = max(getfield_with_default(p0, 'Mms', 1e-3), 1e-6); %#ok<GFLD>
     Cms0 = max(getfield_with_default(p0, 'Cms', 1e-6), 1e-9); %#ok<GFLD>
 
-    % Broad but physically sensible log-space bounds
     x0 = log([Re0, Le0, Bl0, Rms0, Mms0, Cms0]);
-    lb = log([1.0,   1e-6,  0.5,   0.1,   1e-4,  1e-7]);
-    ub = log([32,    5e-3,  30,    50,    0.5,   1e-3]);
+
+    % Pass 1 broad physical bounds
+    lb1 = log([1.0,  1e-6, 0.5, 0.1, 1e-4, 1e-7]);
+    ub1 = log([32,   5e-3, 30,  50,  0.5,  1e-3]);
 
     opts = optimoptions('lsqnonlin', ...
         'Display', ternary(cfg.verbose, 'iter', 'off'), ...
@@ -127,7 +132,7 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
     % PASS 1: data + fs anchor, no prior
     % =====================================================================
     resid1 = @(x) speaker_fit_residual(x, f_fit, Z_fit_meas, coh_fit, geom, env, cfg);
-    [x1, resnorm1, residual1, exitflag1, output1] = lsqnonlin(resid1, x0, lb, ub, opts); %#ok<ASGLU>
+    [x1, resnorm1, residual1, exitflag1, output1] = lsqnonlin(resid1, x0, lb1, ub1, opts); %#ok<ASGLU>
 
     p1 = x_to_params(x1, p0);
     [J1_data, ~, meta1] = build_jacobian_fd(x1, f_fit, Z_fit_meas, coh_fit, geom, env, cfg, []);
@@ -172,11 +177,16 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
     prior.weight = sqrt(max(cfg.regLambda, eps));
     prior.description = 'Anisotropic Gaussian prior aligned with pass-1 SVD directions';
 
+    % ---------------------------------------------------------------------
+    % Fisher-informed adaptive trust bounds for PASS 2
+    % ---------------------------------------------------------------------
+    [lb2, ub2, trustInfo] = fisher_trust_bounds(x_prior, J1_data, cfg);
+
     % =====================================================================
     % PASS 2: MAP fit with fs anchor + SVD prior
     % =====================================================================
     resid2 = @(x) speaker_residual(x, f_fit, Z_fit_meas, coh_fit, geom, env, cfg, prior);
-    [xhat, resnorm, residual, exitflag, output] = lsqnonlin(resid2, x_prior, lb, ub, opts);
+    [xhat, resnorm, residual, exitflag, output] = lsqnonlin(resid2, x_prior, lb2, ub2, opts);
 
     phat = x_to_params(xhat, p0);
     sim  = run_electroacoustic_engine(f_fit, phat, geom, env);
@@ -290,6 +300,10 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
     result.derivedCI = derivedCI;
     result.derivedCovLog = derivedCovLog;
 
+    result.trust = trustInfo;
+    result.trust.lb2 = lb2;
+    result.trust.ub2 = ub2;
+
     result.notes = struct();
     result.notes.parameterization = 'Re, Le, Bl, Rms, Mms, Cms with fs/Qts/Qes/Qms derived';
     result.notes.prior = prior.description;
@@ -300,6 +314,9 @@ function result = fit_speaker_params_smart(df_clean, p0, geom, env, cfg)
     result.notes.includePriorInFisher = cfg.includePriorInFisher;
     result.notes.fsAnchorLambda = cfg.fsAnchorLambda;
     result.notes.fs0 = fs0;
+    result.notes.trustMinLogWidth = cfg.trustMinLogWidth;
+    result.notes.trustMaxLogWidth = cfg.trustMaxLogWidth;
+    result.notes.fisherTrustSigma = cfg.fisherTrustSigma;
 
     if cfg.verbose
         fprintf('[SPEAKER FIT] Pass 1 fs0 = %.6g Hz | refined fs = %.6g Hz\n', fs0, phat.fs);
@@ -527,6 +544,49 @@ function [derivedCI, derivedCovLog] = propagate_derived_ci(xhat, Cov_log, p, env
         end
         derivedCI.(name) = [lo, hi];
     end
+end
+
+% ========================================================================
+% Fisher-informed adaptive trust bounds
+% ========================================================================
+function [lb, ub, info] = fisher_trust_bounds(x_center, J, cfg)
+%FISHER_TRUST_BOUNDS  Axis-aligned trust bounds learned from Fisher information.
+%
+% This is a first-step approximation to a Fisher ellipsoid.
+% Since lsqnonlin only accepts box bounds, we convert the local covariance
+% into per-parameter half-widths and cap them to keep the search local.
+
+    x_center = x_center(:);
+
+    F = J.' * J;
+    F = 0.5 * (F + F.');
+
+    % Robust covariance estimate in log-parameter space
+    if any(~isfinite(F(:))) || rcond(F) < 1e-14
+        Cov = pinv(F + 1e-12 * eye(size(F)));
+    else
+        Cov = pinv(F);
+    end
+
+    sigma = sqrt(max(diag(Cov), eps));
+
+    % Fisher-scaled half-widths
+    rawHalfWidth = cfg.fisherTrustSigma * sigma;
+
+    % Clamp to a sensible local neighborhood:
+    % - not tighter than trustMinLogWidth
+    % - not wider than trustMaxLogWidth
+    halfWidth = min(max(rawHalfWidth, cfg.trustMinLogWidth), cfg.trustMaxLogWidth);
+
+    lb = x_center - halfWidth(:);
+    ub = x_center + halfWidth(:);
+
+    info = struct();
+    info.F = F;
+    info.Cov = Cov;
+    info.sigma = sigma;
+    info.rawHalfWidth = rawHalfWidth;
+    info.halfWidth = halfWidth;
 end
 
 % ========================================================================
