@@ -1,0 +1,44 @@
+[SPEAKER FIT] Pass 1 fs0 = 72.612 Hz | refined fs = 72.6028 Hz
+[SPEAKER FIT] cond(J_data) = 7.830e+02 | cond(F_used) = 5.567e+01
+[SPEAKER FIT] Fit complete. Exitflag = 3
+====================================================
+SMART FIT RESULTS
+====================================================
+--- Fitted Parameters ---
+      c: 343
+    rho: 1.2000
+     Sd: 0.0140
+     Re: 5.6804
+     Le: 4.3705e-04
+     Bl: 11.4295
+    Rms: 15.0450
+    Mms: 0.1273
+    Cms: 3.7741e-05
+     fs: 72.6028
+    Qms: 3.8606
+    Qes: 2.5257
+    Qts: 1.5268
+
+--- Derived ---
+Fs (Hz): 72.602812
+Qms    : 3.860614
+Qes    : 2.525651
+Qts    : 1.526802
+Vas (m^3): 1.044341e-03
+--- 95% Confidence Intervals (Parameters) ---
+Re: [4.367, 7.389]
+Le: [0.0003144, 0.0006076]
+Bl: [8.678, 15.05]
+Rms: [8.322, 27.2]
+Mms: [0.09227, 0.1757]
+Cms: [2.705e-05, 5.266e-05]
+--- 95% Confidence Intervals (Derived) ---
+     fs: [65.8056 80.1021]
+    Cms: [2.7049e-05 5.2660e-05]
+    Qms: [1.5818 9.4222]
+    Qes: [1.0919 5.8423]
+    Qts: [0.7138 3.2658]
+    Vas: [7.4847e-04 0.0015]
+    Rms: [8.3222 27.1988]
+
+cond(J_data) = 7.830e+02
