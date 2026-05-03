@@ -38,7 +38,7 @@ Predict **SPL, impedance, cone displacement, and efficiency** from a complete se
 - **Example:** design a sealed‑box subwoofer and visualise its displacement‑limited power handling.
 
 ### 3. Inverse problem solver (MATLAB) – *experimental*
-Recover **all T/S parameters from a single electrical impedance measurement** – with **95% confidence intervals**.
+Recover **all T/S parameters from a single electrical impedance measurement and their confidence intervals**.
 
 - Two‑pass Bayesian MAP fit with **SVD‑shaped priors** that handle the notorious `Rms` ⇔ `Cms` ambiguity.
 - Automatically estimates `fs0` from the measured phase zero‑crossing.
