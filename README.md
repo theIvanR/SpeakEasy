@@ -45,6 +45,14 @@ Recover **all T/S parameters from a *single* electrical impedance measurement an
 - Outputs: fitted `Re, Le, Bl, Rms, Mms, Cms` plus derived `Qms, Qes, Qts, Vas` and their uncertainties.
 - **Example:** measure a raw driver’s impedance, run `main_inverse.m`, and get a complete parameter set with honest error bars.
 
+**NOTE on identifiability**
+Let F: P → O be the forward map from parameter space P ⊂ ℝ⁶ (e.g., Re, Le, Bl, Rms, Mms, Cms) to the observed electrical impedance Ze(ω) ∈ O, where O is a function space. For a single measurement, the preimage F⁻¹({Ze_obs}) is not a singleton – it is a submanifold of P of positive dimension. Equivalently, the intersection of the measurement manifold M = F(P) with the observed data is a set of positive measure in parameter space.
+
+The solver finds the intersection of this measurement manifold with the prior-informed feasible region. The problem is ill‑posed in the sense of Hadamard: solutions are not unique, and small perturbations can lead to large parameter variations.
+
+To recover a unique solution (i.e., to collapse the feasible set to the empty set of alternative parameter combinations), we lift the observation space by adding independent observables. Each new observable – e.g., added‑mass impedance, near‑field pressure, or laser velocimetry – defines an additional forward map F_j: P → O_j. The joint forward map (F, F₁, …, F_k): P → O × O₁ × … × O_k has an associated adjoint operator that, under ideal conditions (sufficiently many informative measurements), reduces the preimage to a single point. In Bayesian terms, the posterior covariance shrinks, and the confidence intervals tighten.
+
+For practical use: A single impedance measurement yields a ballpark estimate suitable for most engineering tasks (enclosure design, crossover simulation). To eliminate the remaining ambiguity (e.g., for research or high‑precision driver characterisation), the framework scales seamlessly to multiple observables – just append their residuals, and the same Bayesian machinery computes the joint posterior.
 
 ## 🔬 What makes it special?
 
