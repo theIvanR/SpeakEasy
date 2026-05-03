@@ -9,7 +9,7 @@
 Speakeasy is a **research‑grade toolbox** for loudspeaker modelling, measurement, and parameter inversion.  
 It combines a calibrated soundcard‑based impedance analyser, a full‑wave Boundary Element Method (BEM) radiation model, and a **Bayesian inverse solver** that gives you confidence intervals on Thiele‑Small parameters – all in a modular, AGPLv3‑licensed codebase.
 
----
+
 
 ## ✨ What can it do?
 
@@ -45,7 +45,7 @@ Recover **all T/S parameters from a single electrical impedance measurement** �
 - Outputs: fitted `Re, Le, Bl, Rms, Mms, Cms` plus derived `Qms, Qes, Qts, Vas` and their uncertainties.
 - **Example:** measure a raw driver’s impedance, run `main_inverse.m`, and get a complete parameter set with honest error bars.
 
----
+
 
 ## 🔬 What makes it special?
 
